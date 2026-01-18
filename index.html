@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Marvel Rivals – Top Hero Finder</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            background: radial-gradient(circle at top, #1b1f3b, #0e1020);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .card {
+            background: #151830;
+            border-radius: 12px;
+            padding: 24px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+
+        h1 {
+            margin-top: 0;
+            text-align: center;
+            font-size: 1.6rem;
+        }
+
+        label {
+            font-size: 0.9rem;
+            opacity: 0.85;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-top: 6px;
+            margin-bottom: 14px;
+            border-radius: 6px;
+            border: none;
+            outline: none;
+            font-size: 1rem;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #4f7cff;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            color: #fff;
+        }
+
+        button:hover {
+            background: #6b90ff;
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 16px;
+            background: #0f1228;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .hero {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+        .winrate {
+            font-size: 1.1rem;
+            color: #7cffc4;
+        }
+
+        .muted {
+            opacity: 0.7;
+            font-size: 0.85rem;
+            margin-top: 8px;
+        }
+
+        .error {
+            color: #ff7c7c;
+            text-align: center;
+            margin-top: 16px;
+        }
+
+        .loading {
+            text-align: center;
+            margin-top: 16px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>Top Hero Finder</h1>
+
+    <label>
+        Player name(s)
+        <br />
+        <span class="muted">Use ; to separate multiple players</span>
+    </label>
+    <input id="players" placeholder="Player1;Player2;Player3" />
+
+    <label>Season</label>
+    <input id="season" placeholder="5" />
+
+    <button onclick="findTopHero()">Find Top Hero</button>
+
+    <div id="output"></div>
+</div>
+
+<script>
+async function findTopHero() {
+    const playersInput = document.getElementById("players").value.trim();
+    const season = document.getElementById("season").value.trim();
+    const output = document.getElementById("output");
+
+    output.innerHTML = `<div class="loading">Loading hero data…</div>`;
+
+    if (!playersInput) {
+        output.innerHTML = `<div class="error">Please enter at least one player.</div>`;
+        return;
+    }
+
+    const isMulti = playersInput.includes(";");
+    let url = "";
+
+    if (isMulti) {
+        url = `/api/top-hero/combined?players=${encodeURIComponent(playersInput)}`;
+    } else {
+        url = `/api/player/${encodeURIComponent(playersInput)}/top-hero`;
+    }
+
+    if (season) {
+        url += `&season=${encodeURIComponent(season)}`;
+    }
+    alert(url);
+
+    try {
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (data.message || data.error) {
+            output.innerHTML = `<div class="error">${data.message || data.error}</div>`;
+            return;
+        }
+
+        output.innerHTML = `
+            <div class="result">
+                <div class="hero">${data.hero}</div>
+                <div class="winrate">${data.winRate}% win rate</div>
+                <div class="muted">
+                    ${data.matches} matches · ${data.wins} wins
+                </div>
+            </div>
+        `;
+    } catch (err) {
+        output.innerHTML = `<div class="error">Failed to fetch data.</div>`;
+        console.error(err);
+    }
+}
+</script>
+
+</body>
+</html>
